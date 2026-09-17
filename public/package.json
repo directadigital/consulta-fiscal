@@ -1,0 +1,6 @@
+{
+  "name": "consulta-fiscal-directa-digital",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Consulta Fiscal de Produtos - busca local em tabelas NCM/TIPI/CEST/cClassTrib, sem IA e sem custo por consulta"
+}
