@@ -51,6 +51,45 @@
     padding:6px 12px;
     border-radius:6px;
   }
+  .brand-texto{
+    display:flex;
+    flex-direction:column;
+    line-height:1.25;
+  }
+  .brand-nome{
+    font-family:'Source Serif 4',serif;
+    font-weight:600;
+    font-size:16.5px;
+    color:var(--branco);
+  }
+  .brand-slogan{
+    font-size:11.5px;
+    color:var(--cinza-300);
+    letter-spacing:0.02em;
+  }
+  .topbar-direita{
+    display:flex;
+    align-items:center;
+    gap:18px;
+  }
+  .topbar-contato{
+    font-size:11.5px;
+    color:var(--cinza-300);
+    text-align:right;
+    line-height:1.5;
+    display:none;
+  }
+  .topbar-contato a{
+    color:var(--cinza-300);
+    text-decoration:none;
+  }
+  .topbar-contato a:hover{
+    color:var(--branco);
+    text-decoration:underline;
+  }
+  @media (min-width:720px){
+    .topbar-contato{display:block;}
+  }
   .tag-mvp{
     font-size:11px;
     color:var(--cinza-300);
@@ -268,6 +307,30 @@
     color:var(--cinza-600);
     margin-top:4px;
   }
+  .sugestoes-termo{
+    margin-top:12px;
+    font-size:13px;
+    color:var(--cinza-900);
+  }
+  .sugestoes-label{
+    font-weight:600;
+    color:var(--azul-800);
+  }
+  .chip-sugestao{
+    background:var(--branco);
+    border:1.5px solid var(--mostarda);
+    color:var(--azul-900);
+    border-radius:20px;
+    padding:4px 12px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    margin:2px 2px;
+  }
+  .chip-sugestao:hover{
+    background:var(--mostarda);
+    color:var(--branco);
+  }
   .sem-resultado{
     font-size:13.5px;
     color:var(--cinza-600);
@@ -304,8 +367,18 @@
 <div class="topbar">
   <div class="brand">
     <img src="logo.png" alt="Directa Digital" class="brand-logo" onerror="this.style.display='none'">
+    <div class="brand-texto">
+      <span class="brand-nome">Directa Contabilidade Digital</span>
+      <span class="brand-slogan">Contabilidade · Tributário · Consultoria Empresarial · Perícia</span>
+    </div>
   </div>
-  <div class="tag-mvp">Consulta Fiscal · MVP</div>
+  <div class="topbar-direita">
+    <div class="topbar-contato">
+      samuel@directadigital.com.br &nbsp;·&nbsp; (85) 99922-8280<br>
+      <a href="https://www.directadigital.com.br" target="_blank" rel="noopener">www.directadigital.com.br</a>
+    </div>
+    <div class="tag-mvp">Consulta Fiscal · MVP</div>
+  </div>
 </div>
 
 <main>
@@ -323,6 +396,7 @@
     <div class="exemplo">A busca considera as palavras da descrição nas tabelas oficiais carregadas no sistema.</div>
     <div class="status" id="status">Carregando bases de dados...</div>
     <div class="erro-box" id="erro-box"></div>
+    <div class="sugestoes-termo" id="sugestoes-termo" style="display:none;"></div>
   </div>
 
   <div class="ficha" id="ficha">
@@ -382,6 +456,287 @@ function tokenizar(texto){
   return normalizar(texto).split(' ').filter(t => t.length > 1);
 }
 
+// ============================================================
+// DICIONÁRIO DE SINÔNIMOS (linguagem do dia a dia -> vocabulário
+// técnico/aduaneiro). Ao buscar, cada termo do cliente é expandido
+// com estes sinônimos antes de comparar com as tabelas oficiais.
+// Isso roda 100% no navegador (sem custo, sem IA externa).
+// ============================================================
+const SINONIMOS = {
+  // bebidas
+  'cerveja':['malte','cervejaria','bebida alcoolica','fermentada'],
+  'refrigerante':['bebida gaseificada','agua gaseificada aromatizada'],
+  'refri':['refrigerante','bebida gaseificada'],
+  'suco':['sumo','nectar','bebida a base de frutas'],
+  'vinho':['bebida alcoolica','uva fermentada'],
+  'cachaca':['aguardente','destilado','bebida alcoolica'],
+  'pinga':['aguardente','cachaca'],
+  'whisky':['uisque','destilado','bebida alcoolica'],
+  'vodka':['destilado','bebida alcoolica'],
+  'agua':['agua mineral','agua potavel'],
+  'energetico':['bebida energetica'],
+  'leite':['leite em po','leite fluido','lacteo'],
+  'iogurte':['leite fermentado','lacteo'],
+  // alimentos
+  'macarrao':['massa alimenticia','massas'],
+  'macarrão':['massa alimenticia'],
+  'pao':['produto de padaria','panificacao'],
+  'pão':['produto de padaria','panificacao'],
+  'bolacha':['biscoito'],
+  'biscoito':['bolacha'],
+  'chocolate':['cacau','produto de cacau'],
+  'bombom':['chocolate','produto de cacau'],
+  'acucar':['sacarose'],
+  'açúcar':['sacarose'],
+  'sal':['cloreto de sodio'],
+  'oleo':['oleo vegetal','oleo comestivel'],
+  'óleo':['oleo vegetal','oleo comestivel'],
+  'arroz':['cereal'],
+  'feijao':['leguminosa'],
+  'feijão':['leguminosa'],
+  'carne':['carne bovina','produto carneo'],
+  'frango':['carne de aves','ave'],
+  'peixe':['pescado'],
+  'queijo':['lacteo','produto lacteo'],
+  'manteiga':['produto lacteo','gordura'],
+  'margarina':['gordura vegetal'],
+  'cafe':['café em grao','café torrado'],
+  'café':['café em grao','café torrado'],
+  'sorvete':['gelado comestivel'],
+  'salgadinho':['produto de aperitivo','extrusado'],
+  'tempero':['condimento','especiaria'],
+  'molho':['preparado alimenticio'],
+  // limpeza e higiene
+  'sabao':['sabao em po','detergente'],
+  'sabão':['sabao em po','detergente'],
+  'detergente':['agente de limpeza','tensoativo'],
+  'amaciante':['preparacao para lavagem'],
+  'agua sanitaria':['hipoclorito','alvejante'],
+  'desinfetante':['preparacao desinfetante'],
+  'sabonete':['sabao de toucador'],
+  'shampoo':['xampu','preparacao capilar'],
+  'xampu':['shampoo','preparacao capilar'],
+  'condicionador':['preparacao capilar'],
+  'pasta de dente':['dentifricio'],
+  'creme dental':['dentifricio'],
+  'fralda':['artigo de higiene','absorvente'],
+  'absorvente':['artigo de higiene'],
+  'perfume':['produto de perfumaria'],
+  'desodorante':['preparacao antiperspirante'],
+  'creme':['preparacao cosmetica'],
+  'maquiagem':['produto de beleza','cosmetico'],
+  'batom':['produto de maquiagem para labios'],
+  // vestuario e calcados
+  'camisa':['vestuario','artigo de vestuario'],
+  'camiseta':['t-shirt','vestuario de malha'],
+  'calca':['vestuario'],
+  'calça':['vestuario'],
+  'short':['vestuario'],
+  'bermuda':['vestuario'],
+  'vestido':['vestuario feminino'],
+  'saia':['vestuario feminino'],
+  'blusa':['vestuario feminino','vestuario de malha'],
+  'jaqueta':['vestuario','casaco'],
+  'casaco':['vestuario'],
+  'meia':['artigo de meia'],
+  'cueca':['roupa intima'],
+  'calcinha':['roupa intima feminina'],
+  'sutia':['roupa intima feminina'],
+  'sutiã':['roupa intima feminina'],
+  'tenis':['calcado','calcado esportivo'],
+  'tênis':['calcado','calcado esportivo'],
+  'sapato':['calcado'],
+  'sandalia':['calcado'],
+  'sandália':['calcado'],
+  'chinelo':['calcado'],
+  'bota':['calcado'],
+  // eletronicos e informatica
+  'celular':['telefone movel','smartphone','aparelho telefonico'],
+  'smartphone':['telefone movel','aparelho telefonico'],
+  'notebook':['computador portatil','maquina automatica de processamento de dados'],
+  'laptop':['computador portatil'],
+  'computador':['maquina automatica de processamento de dados'],
+  'tablet':['maquina automatica de processamento de dados portatil'],
+  'televisao':['aparelho receptor de televisao','tv'],
+  'televisão':['aparelho receptor de televisao','tv'],
+  'tv':['aparelho receptor de televisao'],
+  'monitor':['monitor de video','tela'],
+  'impressora':['maquina impressora'],
+  'fone de ouvido':['fone','auricular','receptor de som'],
+  'carregador':['carregador de bateria','fonte de alimentacao'],
+  'bateria':['pilha eletrica','acumulador'],
+  'pilha':['pilha eletrica'],
+  'cabo usb':['cabo eletrico','fio isolado'],
+  'roteador':['aparelho para redes de comunicacao'],
+  'caixa de som':['alto-falante'],
+  'alto falante':['aparelho de amplificacao de som'],
+  'camera fotografica':['aparelho fotografico'],
+  'câmera':['aparelho fotografico'],
+  'ventilador':['aparelho eletromecanico de uso domestico'],
+  'liquidificador':['aparelho eletromecanico de uso domestico'],
+  'geladeira':['refrigerador','frigorifico'],
+  'freezer':['congelador'],
+  'fogao':['aparelho de cozer','fogão'],
+  'fogão':['aparelho de cozer'],
+  'micro-ondas':['forno de micro-ondas'],
+  'microondas':['forno de micro-ondas'],
+  'ar condicionado':['maquina e aparelho de ar-condicionado'],
+  // moveis e construcao
+  'cadeira':['assento','mobiliario'],
+  'mesa':['mobiliario'],
+  'sofa':['assento estofado','mobiliario'],
+  'sofá':['assento estofado','mobiliario'],
+  'colchao':['artigo de colchoaria'],
+  'colchão':['artigo de colchoaria'],
+  'armario':['movel de madeira','mobiliario'],
+  'armário':['movel de madeira','mobiliario'],
+  'cimento':['cimento portland'],
+  'tijolo':['produto ceramico para construcao'],
+  'telha':['produto ceramico para cobertura'],
+  'tinta':['tinta e verniz','preparacao para pintura'],
+  'parafuso':['artefato de rosca','elemento de fixacao'],
+  'prego':['artefato de ferro ou aco para fixacao'],
+  'porca':['artefato de rosca'],
+  'fio eletrico':['fio e cabo isolado para eletricidade'],
+  'cano':['tubo'],
+  'tubo pvc':['tubo de plastico'],
+  'torneira':['artigo de metal para uso sanitario'],
+  'vaso sanitario':['aparelho sanitario de ceramica'],
+  'vaso sanitário':['aparelho sanitario de ceramica'],
+  'madeira':['madeira serrada','produto de madeira'],
+  // outros
+  'pneu':['pneumatico'],
+  'oleo de motor':['lubrificante'],
+  'peca automotiva':['parte e acessorio de veiculo'],
+  'brinquedo':['artigo de entretenimento infantil'],
+  'papel':['papel e cartao'],
+  'caneta':['artigo de escritorio'],
+  'caderno':['artigo de papelaria'],
+  'embalagem plastica':['artefato de plastico para embalagem'],
+  'saco plastico':['artefato de plastico'],
+  'remedio':['medicamento'],
+  'remédio':['medicamento'],
+  'seringa':['artigo para uso medico'],
+  'luva':['artigo de vestuario para protecao'],
+  'mascara':['artigo de protecao respiratoria'],
+  'máscara':['artigo de protecao respiratoria'],
+  'adubo':['fertilizante'],
+  'racao':['alimento para animais'],
+  'ração':['alimento para animais'],
+  'agrotoxico':['defensivo agricola','praguicida'],
+  'sementes':['semente para semeadura'],
+};
+
+function expandirComSinonimos(tokens){
+  const expandido = new Set(tokens);
+  for(const t of tokens){
+    if(SINONIMOS[t]){
+      SINONIMOS[t].forEach(frase => {
+        tokenizar(frase).forEach(tk => expandido.add(tk));
+      });
+    }
+  }
+  return Array.from(expandido);
+}
+
+// ============================================================
+// ÍNDICE DE VOCABULÁRIO + BUSCA APROXIMADA ("você quis dizer?")
+// Construído uma única vez, a partir das próprias tabelas já
+// carregadas (sem custo adicional, sem chamada externa).
+// ============================================================
+let vocabulario = null; // Map: palavra normalizada -> frequência
+let vocabularioPronto = false;
+
+function indexarTexto(texto, mapa){
+  tokenizar(texto).forEach(p => {
+    if(p.length >= 4 && !STOPWORDS.has(p)){
+      mapa.set(p, (mapa.get(p) || 0) + 1);
+    }
+  });
+}
+
+function construirVocabulario(){
+  const mapa = new Map();
+  baseNCM.forEach(i => indexarTexto(i.descricao_completa, mapa));
+  baseCEST.forEach(i => indexarTexto((i.descricao||'') + ' ' + (i.segmento||''), mapa));
+  baseCClassTrib.forEach(i => indexarTexto((i.nome_cclasstrib||'') + ' ' + (i.descricao_cclasstrib||''), mapa));
+  vocabulario = mapa;
+  vocabularioPronto = true;
+}
+
+function distanciaLevenshtein(a, b){
+  const m = a.length, n = b.length;
+  if(Math.abs(m - n) > 2) return 99; // corte rápido, evita custo desnecessário
+  const dp = Array.from({length: m+1}, () => new Array(n+1).fill(0));
+  for(let i=0;i<=m;i++) dp[i][0]=i;
+  for(let j=0;j<=n;j++) dp[0][j]=j;
+  for(let i=1;i<=m;i++){
+    for(let j=1;j<=n;j++){
+      const custo = a[i-1]===b[j-1] ? 0 : 1;
+      dp[i][j] = Math.min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1]+custo);
+    }
+  }
+  return dp[m][n];
+}
+
+function existeCorrespondenciaDireta(token){
+  if(!vocabulario) return true;
+  for(const palavra of vocabulario.keys()){
+    if(palavra === token || (token.length >= 4 && palavra.startsWith(token))) return true;
+  }
+  return false;
+}
+
+function sugerirCorrecoes(token, limite=3){
+  if(!vocabulario || token.length < 4) return [];
+  const candidatos = [];
+  for(const [palavra, freq] of vocabulario.entries()){
+    const dist = distanciaLevenshtein(token, palavra);
+    if(dist > 0 && dist <= 2) candidatos.push({palavra, dist, freq});
+  }
+  candidatos.sort((a,b) => a.dist - b.dist || b.freq - a.freq);
+  const vistos = new Set();
+  const resultado = [];
+  for(const c of candidatos){
+    if(vistos.has(c.palavra)) continue;
+    vistos.add(c.palavra);
+    resultado.push(c.palavra);
+    if(resultado.length >= limite) break;
+  }
+  return resultado;
+}
+
+function montarSugestoesDeTermo(termoOriginal, tokensOriginais){
+  // Só sugere para termos que o cliente digitou (sem sinônimo aplicado)
+  // e que não batem em nada nas tabelas — é aí que o layman "erra o termo".
+  const semCorrespondencia = tokensOriginais.filter(t =>
+    t.length >= 4 && !STOPWORDS.has(t) && !existeCorrespondenciaDireta(t) && !SINONIMOS[t]
+  );
+  if(semCorrespondencia.length === 0) return [];
+  const sugestoes = [];
+  semCorrespondencia.forEach(t => {
+    const corrigidas = sugerirCorrecoes(t);
+    corrigidas.forEach(c => {
+      const novoTermo = substituirPalavra(termoOriginal, t, c);
+      if(novoTermo) sugestoes.push({de: t, para: c, termo: novoTermo});
+    });
+  });
+  return sugestoes.slice(0, 4);
+}
+
+function substituirPalavra(textoOriginal, tokenNormAntigo, palavraNormNova){
+  const palavras = textoOriginal.split(/(\s+)/); // preserva espaços
+  let trocou = false;
+  const novo = palavras.map(p => {
+    if(!trocou && normalizar(p) === tokenNormAntigo){
+      trocou = true;
+      return palavraNormNova;
+    }
+    return p;
+  });
+  return trocou ? novo.join('') : null;
+}
+
 // pequena lista de "stopwords" em português para não distorcer o score —
 // inclui termos genéricos comuns na LINGUAGEM DE CLASSIFICAÇÃO FISCAL (não
 // são palavras de produto, e aparecem em descrições de itens muito diferentes)
@@ -433,6 +788,8 @@ async function carregarDados(){
     baseAnexosNCM = await anexosResp.json();
     dadosCarregados = true;
     status.style.display = 'none';
+    // Constrói o índice de vocabulário em segundo plano, sem travar a UI
+    setTimeout(construirVocabulario, 0);
   }catch(err){
     status.style.display = 'none';
     mostrarErro('Não foi possível carregar as bases de dados locais. Verifique se os arquivos da pasta "dados" estão publicados junto com o site.');
@@ -493,16 +850,37 @@ function renderCampo(label, valor, isDesc){
 }
 
 function renderResultado(termo){
-  const tokens = tokenizar(termo);
+  const tokensOriginais = tokenizar(termo);
+  const tokens = expandirComSinonimos(tokensOriginais);
 
   document.getElementById('f-produto').textContent = termo;
 
   // NCM + IPI (mostra as melhores correspondências, não só uma, para evitar erro em caso de empate/ambiguidade)
   const ncmCandidatos = buscarNCM(tokens);
+
+  // "Você quis dizer...?" — sugere correção quando algum termo digitado
+  // não bate em nada nas tabelas (erro de digitação ou termo leigo demais)
+  const sugestoesBox = document.getElementById('sugestoes-termo');
+  const sugestoes = vocabularioPronto ? montarSugestoesDeTermo(termo, tokensOriginais) : [];
+  if(sugestoes.length > 0 && (ncmCandidatos.length === 0 || ncmCandidatos[0].fracao < 0.6)){
+    sugestoesBox.innerHTML = '<span class="sugestoes-label">Você quis dizer:</span> ' +
+      sugestoes.map(s => `<button type="button" class="chip-sugestao" data-termo="${s.termo.replace(/"/g,'&quot;')}">${s.termo}</button>`).join(' ');
+    sugestoesBox.style.display = 'block';
+    sugestoesBox.querySelectorAll('.chip-sugestao').forEach(btn => {
+      btn.addEventListener('click', () => {
+        campoBusca.value = btn.getAttribute('data-termo');
+        iniciarConsulta();
+      });
+    });
+  }else{
+    sugestoesBox.style.display = 'none';
+    sugestoesBox.innerHTML = '';
+  }
+
   const listaNcm = document.getElementById('lista-ncm');
   listaNcm.innerHTML = '';
   if(ncmCandidatos.length === 0){
-    listaNcm.innerHTML = '<div class="sem-resultado">Nenhum NCM encontrado para esses termos. Tente descrever com mais detalhes (material, composição, finalidade).</div>';
+    listaNcm.innerHTML = '<div class="sem-resultado">Nenhum NCM encontrado para esses termos. Tente descrever com mais detalhes (material, composição, finalidade) ou use um dos termos sugeridos acima, se houver.</div>';
   }else{
     ncmCandidatos.forEach(item => {
       const ipi = baseTIPI[item.ncm] || 'Não localizado na TIPI';

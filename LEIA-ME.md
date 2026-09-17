@@ -1,4 +1,27 @@
-# Consulta Fiscal de Produtos — Directa Digital (v2, sem IA)
+# Consulta Fiscal de Produtos — Directa Digital (v3, busca inteligente, sem IA)
+
+## Novidades da v3 (busca mais esperta para o cliente leigo)
+
+Continua 100% local no navegador — sem custo por consulta, sem IA externa.
+Duas melhorias:
+
+1. **Dicionário de sinônimos** (`SINONIMOS` no código): ~150 termos do
+   dia a dia (ex.: "cerveja", "tênis", "remédio", "parafuso") mapeados
+   para o vocabulário técnico usado nas tabelas oficiais. Ao buscar, o
+   termo do cliente é automaticamente expandido antes de comparar —
+   sem precisar saber a linguagem da NCM.
+2. **"Você quis dizer...?"**: quando um termo digitado não bate em nada
+   nas tabelas (erro de digitação ou termo raro demais) e o resultado
+   geral ficou fraco, o sistema constrói um índice de palavras a partir
+   das próprias tabelas já carregadas e sugere até 4 correções por
+   distância de edição (Levenshtein), como botões clicáveis que refazem
+   a busca automaticamente.
+
+Para ampliar a cobertura, basta adicionar entradas ao objeto `SINONIMOS`
+no `<script>` do `index.html` (chave = termo leigo, valor = lista de
+termos técnicos a injetar na busca).
+
+
 
 Esta versão NÃO usa inteligência artificial nem depende de chave de API paga.
 A busca acontece 100% no navegador do cliente, usando as tabelas oficiais que
